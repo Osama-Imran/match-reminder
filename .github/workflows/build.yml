@@ -1,0 +1,38 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Create Flutter project scaffold
+        run: flutter create --platforms=android app_build
+
+      - name: Copy custom app code into scaffold
+        run: |
+          cp app_source/pubspec.yaml app_build/pubspec.yaml
+          cp app_source/lib/main.dart app_build/lib/main.dart
+          cp app_source/android/AndroidManifest.xml app_build/android/app/src/main/AndroidManifest.xml
+
+      - name: Get dependencies
+        run: cd app_build && flutter pub get
+
+      - name: Build APK
+        run: cd app_build && flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-reminder-apk
+          path: app_build/build/app/outputs/flutter-apk/app-release.apk
